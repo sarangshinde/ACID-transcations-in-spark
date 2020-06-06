@@ -21,6 +21,7 @@ lazy val app = project
       "org.apache.spark" %% "spark-sql" % "2.4.4",
       "org.apache.spark" %% "spark-avro" % "2.4.4",
       "org.apache.hudi" %% "hudi-spark-bundle" % "0.5.2-incubating",
+      "org.apache.iceberg" % "iceberg-spark-runtime" % "0.8.0-incubating",
       "org.scalatest" %% "scalatest" % "3.0.5" % Test,
       "com.holdenkarau" %% "spark-testing-base" % "2.4.3_0.12.0" % Test,
       "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.0" % Test,

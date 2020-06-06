@@ -7,8 +7,10 @@ import org.apache.hudi.QuickstartUtils.getQuickstartWriteConfigs
 import org.apache.hudi.config.HoodieWriteConfig.TABLE_NAME
 import org.apache.spark.sql.SaveMode.Append
 import org.apache.spark.sql.{Dataset, Row}
+
 import scala.collection.JavaConversions._
-import Constants._
+import utilities.Constants._
+import utilities.{DataGeneratorFactory, SparkFactory}
 
 object DeleteData extends App{
 
@@ -18,7 +20,7 @@ object DeleteData extends App{
   val roBeforeDeleteViewDF = spark.
     read.
     format("hudi").
-    load(BASEPATH + "/*/*/*/*")
+    load(HUDI_BASEPATH + "/*/*/*/*")
   roBeforeDeleteViewDF.createOrReplaceTempView("hudi_trips_snapshot")
   // fetch should return (total - 2) records
 
@@ -42,16 +44,16 @@ object DeleteData extends App{
     option(PRECOMBINE_FIELD_OPT_KEY, "ts").
     option(RECORDKEY_FIELD_OPT_KEY, "uuid").
     option(PARTITIONPATH_FIELD_OPT_KEY, "partitionpath").
-    option(TABLE_NAME, TABLENAME).
+    option(TABLE_NAME, HUDI_TABLENAME).
     mode(Append).
-    save(BASEPATH)
+    save(HUDI_BASEPATH)
 
   println("--Total Records after delete--")
 
   val roAfterDeleteViewDF = spark.
     read.
     format("hudi").
-    load(BASEPATH + "/*/*/*/*")
+    load(HUDI_BASEPATH + "/*/*/*/*")
   roAfterDeleteViewDF.createOrReplaceTempView("hudi_trips_snapshot_after_delete")
 
   val afterDeleteCount = spark.sql("select uuid, partitionPath from hudi_trips_snapshot_after_delete").count()

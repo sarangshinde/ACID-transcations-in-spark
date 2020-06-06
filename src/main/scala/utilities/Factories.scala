@@ -1,4 +1,4 @@
-package hudi.basics
+package utilities
 
 import org.apache.hudi.QuickstartUtils.DataGenerator
 import org.apache.spark.sql.SparkSession
@@ -7,10 +7,10 @@ object SparkFactory {
 
   def getSparkSession() :SparkSession = {
    SparkSession.builder()
-    .appName("HudiDataGenerator")
+    .appName("Transcations")
     .master("local[*]")
     .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-    .getOrCreate()
+     .getOrCreate()
   }
 }
 

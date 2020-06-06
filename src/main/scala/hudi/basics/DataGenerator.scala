@@ -7,8 +7,10 @@ import org.apache.hudi.QuickstartUtils.{convertToStringList, getQuickstartWriteC
 import org.apache.hudi.config.HoodieWriteConfig.TABLE_NAME
 import org.apache.spark.sql.SaveMode.{Append, Overwrite}
 import org.apache.spark.sql.{DataFrame, Dataset}
+
 import scala.collection.JavaConversions._
-import Constants._
+import utilities.Constants._
+import utilities.{DataGeneratorFactory, SparkFactory}
 
 object DataGenerator extends App{
 
@@ -18,7 +20,7 @@ object DataGenerator extends App{
       option(PRECOMBINE_FIELD_OPT_KEY, "ts").
       option(RECORDKEY_FIELD_OPT_KEY, "uuid").
       option(PARTITIONPATH_FIELD_OPT_KEY, "partitionpath").
-      option(TABLE_NAME, TABLENAME)
+      option(TABLE_NAME, HUDI_TABLENAME)
   }
 
   def inserts(): Unit ={
@@ -29,7 +31,7 @@ object DataGenerator extends App{
     val df: DataFrame = spark.read.json(data)
     hudiWriterConfig(df).
       mode(Overwrite).
-      save(BASEPATH)
+      save(HUDI_BASEPATH)
   }
 
   def updates(): Unit ={
@@ -40,7 +42,7 @@ object DataGenerator extends App{
     val df = spark.read.json(data)
     hudiWriterConfig(df).
       mode(Append).
-      save(BASEPATH)
+      save(HUDI_BASEPATH)
   }
 
 

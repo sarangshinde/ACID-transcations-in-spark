@@ -1,4 +1,3 @@
-/logs
 target
 out
 .idea/
@@ -6,3 +5,4 @@ out
 /.classpath
 /.project
 /.settings
+src/main/resources/*

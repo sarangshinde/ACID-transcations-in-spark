@@ -17,5 +17,7 @@ object Constants {
   val DELTA = "delta"
   val APPEND = "append"
   val OVERWRITE = "overwrite"
+  val EMPTY=""
+  val DEFAULT_CONFIGURATION = "default.conf"
 
 }

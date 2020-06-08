@@ -14,6 +14,15 @@ object SparkFactory {
   }
 }
 
+object ConfigurationFactory{
+
+  def getConfiguration(filename:String) ={
+
+    new ConfigurationHelper(fileName=filename)
+
+  }
+}
+
 
 object DataGeneratorFactory {
   val dataGen = new DataGenerator

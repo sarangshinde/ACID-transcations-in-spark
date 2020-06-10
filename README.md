@@ -1,5 +1,7 @@
 How to run pipeline part.
 
+Create new or replace paths in application.local.conf. 
+
 kafka Consumer sections needs kafka and way to populate data.
 Here we have used setup provided by Hudi Team.
 
@@ -9,7 +11,7 @@ Follow above link and perform setup.
 After this we need to change kafka and zookeeper version in existing setup.
 For that go to /docker/compose/docker-compose_hadoop284_hive233_spark244.yml change version to following  
 
-bitnami/kafka:2.5.0 \
+bitnami/kafka:2.5.0 
 
 bitnami/zookeeper:3.6.1
 

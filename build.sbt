@@ -19,6 +19,7 @@ lazy val app = project
     libraryDependencies ++= Seq(
       "org.apache.spark" %% "spark-sql-kafka-0-10" % "2.4.4",
       "org.apache.spark" %% "spark-core" % "2.4.4",
+      "org.apache.spark" %% "spark-hive" % "2.4.4",
       "org.apache.spark" %% "spark-sql" % "2.4.4",
       "org.apache.spark" %% "spark-avro" % "2.4.4",
       "com.typesafe" % "config" % "1.3.2",
@@ -27,6 +28,7 @@ lazy val app = project
       "org.apache.iceberg" % "iceberg-spark-runtime" % "0.8.0-incubating",
       "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.0" % IntegrationTest
     ),
+    dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.0",
     mappings in Universal ++= directory("conf/"),
     mappings in Universal ++= directory("scripts/"),
     mappings in Universal ++= directory("src/main/resources/")

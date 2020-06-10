@@ -15,8 +15,10 @@ object QueryData extends App{
   {
     val rawDataPath = configurationHelper.getString("rawPath")
     val tableData = spark.read.format(DELTA).load(rawDataPath)
+    println("Total number of records "+tableData.count)
     tableData.show(false)
   }
+
   queryRawData()
 
 }

@@ -15,6 +15,7 @@ object Constants {
   val DELTA_STREAMING_OUTPUT_PATH = "file:///Users/in-svsarang/Desktop/sarang/sparkwork/src/main/resources/streaming_output_"+DELTA_TABLENAME
 
   val DELTA = "delta"
+  val HUDI = "hudi"
   val APPEND = "append"
   val OVERWRITE = "overwrite"
   val EMPTY=""

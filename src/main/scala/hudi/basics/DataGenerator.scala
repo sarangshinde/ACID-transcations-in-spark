@@ -15,7 +15,7 @@ import utilities.{DataGeneratorFactory, SparkFactory}
 object DataGenerator extends App{
 
   def hudiWriterConfig(df:DataFrame) = {
-    df.write.format("hudi").
+    df.write.format(HUDI).
       options(getQuickstartWriteConfigs).
       option(PRECOMBINE_FIELD_OPT_KEY, "ts").
       option(RECORDKEY_FIELD_OPT_KEY, "uuid").

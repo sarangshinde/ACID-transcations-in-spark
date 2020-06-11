@@ -18,6 +18,10 @@ bitnami/zookeeper:3.6.1
 To generate data using script specified in above link.
 
 To run pipeline:
+
+Use path to configuration file as argument for all programs.
+ 
 1. insert first batch to kafka.
 2. consume data using kafka consumer, then run silver layer and gold.
 3. For incremental loading comment some of the dumpexisting code section.
+4. Follow same steps for second batch of data.

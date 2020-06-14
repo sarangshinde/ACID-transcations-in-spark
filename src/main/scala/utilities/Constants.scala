@@ -18,6 +18,8 @@ object Constants {
   val HUDI = "hudi"
   val APPEND = "append"
   val OVERWRITE = "overwrite"
+  val PARQUET = "parquet"
+  val ICEBERG ="iceberg"
   val EMPTY=""
   val DEFAULT_CONFIGURATION = "default.conf"
 

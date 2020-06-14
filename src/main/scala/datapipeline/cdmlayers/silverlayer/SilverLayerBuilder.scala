@@ -86,7 +86,9 @@ class SilverLayerBuilder(configurationHelper:ConfigurationHelper,spark:SparkSess
 
   def dumpExistingData(rawDataPath:String,silverLayerPath:String): Unit ={
 
-    val rawData = spark.read.format(DELTA).load(rawDataPath)
+    val rawData = spark.read
+                       .format(DELTA).load(rawDataPath)
+
     val dataWithVolumnRiseAndDrop = calculateVolumnRiseOrDrop(rawData.filter($"symbol"===lit("BAND")))
     dataWithVolumnRiseAndDrop.write.format(DELTA)
       .partitionBy("date","hour")

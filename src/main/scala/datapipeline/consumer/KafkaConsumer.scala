@@ -47,6 +47,8 @@ class KafkaConsumer(configurationHelper:ConfigurationHelper,spark:SparkSession){
 
     val rawDataPath = configurationHelper.getString("rawPath")
     val rawCheckPointPath = configurationHelper.getString("checkpointPath")
+
+
     data.writeStream.format(DELTA)
       .outputMode(APPEND)
       .partitionBy("date","hour")
@@ -62,8 +64,7 @@ object KafkaConsumer {
 
   def main(args: Array[String]): Unit = {
 
-    val localConfFilePath ="/Users//in-svsarang//Desktop//sarang//sparkwork//conf//application.local.conf"
-    val filePath =  if(args(0).isEmpty) localConfFilePath else args(0)
+    val filePath =  args(0)
     val spark = SparkFactory.getSparkSession()
     val configurationHelper = ConfigurationFactory.getConfiguration(filePath)
     val kafkaConsumer = new KafkaConsumer(configurationHelper,spark)

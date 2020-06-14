@@ -97,9 +97,8 @@ class GoldLayerBuilder (configurationHelper:ConfigurationHelper,spark:SparkSessi
 
 
   def readData(path:String) = {
-    spark.
-      read.
-      format(HUDI).load(path)
+    spark.read
+         .format(HUDI).load(path)
   }
 }
 
@@ -117,6 +116,7 @@ object GoldLayerBuilder {
     val goldLayerBuilder = new GoldLayerBuilder(configurationHelper,spark)
 
     goldLayerBuilder.dumpExistingData(silverLayerPath,goldLayerPath)
+
     var goldLayerData =goldLayerBuilder.readData(goldLayerPath+"/*/*")
 
     println("Total number of records before incremental update "+ goldLayerData.count())
@@ -127,6 +127,5 @@ object GoldLayerBuilder {
     goldLayerData = goldLayerBuilder.readData(goldLayerPath+"/*/*")
     println("Total number of records after incremental update "+ goldLayerData.count())
     goldLayerData.show(false)
-
   }
 }

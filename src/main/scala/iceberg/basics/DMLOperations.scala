@@ -3,7 +3,7 @@ package iceberg.basics
 import java.sql.Timestamp
 
 import iceberg.basics.CreateTable.data
-import utilities.Constants.ICEBERG_BASEPATH
+import utilities.Constants._
 import utilities.SparkFactory
 
 object DMLOperations extends App{
@@ -30,8 +30,8 @@ object DMLOperations extends App{
       .toDF("itemId", "itemName","itemPruchasedAtTime")
 
     data.write
-      .format("iceberg")
-      .mode("append")
+      .format(ICEBERG)
+      .mode(APPEND)
       .save(ICEBERG_BASEPATH)
 
   }

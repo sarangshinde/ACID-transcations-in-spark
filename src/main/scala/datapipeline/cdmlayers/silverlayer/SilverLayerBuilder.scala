@@ -113,29 +113,24 @@ object SilverLayerBuilder {
 
   def main(args: Array[String]): Unit = {
     val filePath =  args(0)
+    val loadData = args(1)
     val spark = SparkFactory.getSparkSession()
     val configurationHelper = ConfigurationFactory.getConfiguration(filePath)
     val silverLayerBuilder = new SilverLayerBuilder(configurationHelper,spark)
 
     val rawDataPath = configurationHelper.getString("rawPath")
     val silverLayerPath = configurationHelper.getString("silverLayerPath")
-    //comment it while loading only incremental data
-    silverLayerBuilder.dumpExistingData(rawDataPath,silverLayerPath)
 
-
-    val existingDump = spark.read.format(DELTA).load(silverLayerPath)
-    println("Existing Number of records " + existingDump.count)
-    existingDump.show()
-
-    silverLayerBuilder.incrementalData(rawDataPath,silverLayerPath)
-   val incrementalMerge = spark.read.format(DELTA).load(silverLayerPath)
-
-    val total: Long = incrementalMerge.count()
-    println("After merge number of records " + total)
-    import spark.implicits._
-    incrementalMerge.orderBy($"symbol",$"time").show(total.toInt)
-
-
+     if(loadData.equalsIgnoreCase("incremental")){
+      silverLayerBuilder.incrementalData(rawDataPath,silverLayerPath)
+     }
+      else
+      {
+        silverLayerBuilder.dumpExistingData(rawDataPath,silverLayerPath)
+      }
+    val silverLayerData = spark.read.format(DELTA).load(silverLayerPath)
+    println("Existing Number of records " + silverLayerData.count)
+    silverLayerData.orderBy("symbol","time").show(200,false)
 
 //    val deltaTable = DeltaTable.forPath(spark, silverLayerPath+"/")
 //    deltaTable.history().show(false)

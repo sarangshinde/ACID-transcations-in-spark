@@ -108,6 +108,7 @@ object GoldLayerBuilder {
 
   def main(args: Array[String]): Unit = {
     val filePath = args(0)
+    val loadData= args(1) //dump existing data or load incrementally
     val spark = SparkFactory.getSparkSession()
     val configurationHelper = ConfigurationFactory.getConfiguration(filePath)
 
@@ -115,17 +116,15 @@ object GoldLayerBuilder {
     val goldLayerPath = configurationHelper.getString("goldLayerPath")
     val goldLayerBuilder = new GoldLayerBuilder(configurationHelper,spark)
 
-    goldLayerBuilder.dumpExistingData(silverLayerPath,goldLayerPath)
-
-    var goldLayerData =goldLayerBuilder.readData(goldLayerPath+"/*/*")
-
+    if(loadData.equalsIgnoreCase("incremental")) {
+      goldLayerBuilder.incrementalData(silverLayerPath,goldLayerPath)
+    }
+    else{
+      goldLayerBuilder.dumpExistingData(silverLayerPath, goldLayerPath)
+    }
+    val goldLayerData =goldLayerBuilder.readData(goldLayerPath+"/*/*")
     println("Total number of records before incremental update "+ goldLayerData.count())
     goldLayerData.printSchema()
-    goldLayerData.show(false)
-
-    goldLayerBuilder.incrementalData(silverLayerPath,goldLayerPath)
-    goldLayerData = goldLayerBuilder.readData(goldLayerPath+"/*/*")
-    println("Total number of records after incremental update "+ goldLayerData.count())
     goldLayerData.show(false)
   }
 }

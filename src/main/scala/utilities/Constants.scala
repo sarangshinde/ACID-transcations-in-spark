@@ -10,6 +10,8 @@ object Constants {
 
   val DELTA_TABLENAME = "delta_lake_empdata"
   val DELTA_BASEPATH = "file:///Users/in-svsarang/Desktop/sarang/sparkwork/src/main/resources/"+DELTA_TABLENAME
+
+  val DELTA_HISTORY_VERSIONING_BASEPATH = "file:///Users/in-svsarang/Desktop/sarang/sparkwork/src/main/resources/history_versioning_"+DELTA_TABLENAME
   val DELTA_CHECKPOINT_PATH = "file:///Users/in-svsarang/Desktop/sarang/sparkwork/src/main/resources/checkpoint_"+DELTA_TABLENAME
   val DELTA_STREAMING_INPUT_PATH = "file:///Users/in-svsarang/Desktop/sarang/sparkwork/src/main/resources/streaming_input_"+DELTA_TABLENAME
   val DELTA_STREAMING_OUTPUT_PATH = "file:///Users/in-svsarang/Desktop/sarang/sparkwork/src/main/resources/streaming_output_"+DELTA_TABLENAME

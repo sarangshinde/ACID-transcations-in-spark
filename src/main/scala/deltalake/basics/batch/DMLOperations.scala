@@ -52,9 +52,13 @@ object DMLOperations extends App{
   query("select * from delta_lake_emp_table")
 
 
+
+  updateWithOverwrite()
+  println("Data after insert same value in same partition using overwrite")
+  query("select * from delta_lake_emp_table")
+
   //Conditional update without overwrite
   val deltaTable = DeltaTable.forPath(spark, DELTA_BASEPATH)
-
   deltaTable.update(
     condition = expr("itemName == 'new_pen'"),
     set = Map("itemId" -> expr("itemId + 1")))
@@ -64,11 +68,6 @@ object DMLOperations extends App{
 
   // Delete conditionally
   println("Data after delete conditionally ")
- // deltaTable.delete(condition = expr("itemName == 'new_pen'"))
-  query("select * from delta_lake_emp_table")
-
-
-  updateWithOverwrite()
-  println("Data after insert same value in same partition using overwrite")
+  deltaTable.delete(condition = expr("itemName == 'new_pen'"))
   query("select * from delta_lake_emp_table")
 }

@@ -28,7 +28,13 @@ lazy val app = project
       "org.apache.iceberg" % "iceberg-spark-runtime" % "0.8.0-incubating",
       "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.0" % IntegrationTest
     ),
-    dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.0",
+    dependencyOverrides ++= {
+      Seq(
+        "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.6.7.1",
+        "com.fasterxml.jackson.core" % "jackson-databind" % "2.6.7",
+        "com.fasterxml.jackson.core" % "jackson-core" % "2.6.7"
+      )
+    },
     mappings in Universal ++= directory("conf/"),
     mappings in Universal ++= directory("scripts/"),
     mappings in Universal ++= directory("src/main/resources/")

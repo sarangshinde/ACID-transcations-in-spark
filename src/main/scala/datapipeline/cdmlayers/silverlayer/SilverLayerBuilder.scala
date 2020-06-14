@@ -132,8 +132,6 @@ object SilverLayerBuilder {
     println("Existing Number of records " + silverLayerData.count)
     silverLayerData.orderBy("symbol","time").show(200,false)
 
-//    val deltaTable = DeltaTable.forPath(spark, silverLayerPath+"/")
-//    deltaTable.history().show(false)
   }
 
 

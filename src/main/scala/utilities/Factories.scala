@@ -6,11 +6,16 @@ import org.apache.spark.sql.SparkSession
 object SparkFactory {
 
   def getSparkSession() :SparkSession = {
-   SparkSession.builder()
+   val spark = SparkSession.builder()
     .appName("Transcations")
     .master("local[*]")
+     .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
     .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
      .getOrCreate()
+
+    spark.sparkContext.setLogLevel("ERROR")
+    spark
+
   }
 }
 

@@ -1,6 +1,7 @@
 package datapipeline.cdmlayers.goldlayer
 
 import hudi.basics.DataGenerator.hudiWriterConfig
+import io.delta.tables.DeltaTable
 import org.apache.hudi.DataSourceWriteOptions._
 import org.apache.hudi.QuickstartUtils.getQuickstartWriteConfigs
 import org.apache.hudi.config.HoodieWriteConfig.TABLE_NAME
@@ -48,13 +49,13 @@ class GoldLayerBuilder (configurationHelper:ConfigurationHelper,spark:SparkSessi
       .withColumn("total_volume",
         col("goldLayerData.total_volume") + col("agg_volume"))
       .withColumn("last_updated_at",col("max_time"))
-    updateExistingAggregations.select("silverLayerData.symbol","silverLayerData.date","silverLayerData.hour","total_volume","last_updated_at")
+    updateExistingAggregations.select("silverLayerData.symbol","silverLayerData.date","total_volume","last_updated_at")
 
   }
 
   def performAggregations(data:DataFrame):DataFrame={
 
-    data.groupBy("symbol","date","hour")
+    data.groupBy("symbol","date")
       .agg(sum("volume").alias("total_volume"),
            max("time").as("last_updated_at"))
       .withColumn("date",$"date".cast(StringType))
@@ -62,7 +63,7 @@ class GoldLayerBuilder (configurationHelper:ConfigurationHelper,spark:SparkSessi
 
   def dumpExistingData(silverLayerPath:String,goldLayerPath:String): Unit ={
 
-    val silverLayerData = readData(silverLayerPath).filter($"symbol"===lit("BAND"))
+    val silverLayerData = readAllSilverLayerData(silverLayerPath).filter($"symbol"===lit("BAND"))
     val aggregatedData = performAggregations(silverLayerData)
     hudiWriterConfig(aggregatedData)
       .mode(Append).save(goldLayerPath)
@@ -72,8 +73,8 @@ class GoldLayerBuilder (configurationHelper:ConfigurationHelper,spark:SparkSessi
   def incrementalData(silverLayerPath:String,goldLayerPath:String): Unit ={
 
     val goldLayerData = readData(goldLayerPath+"/*/*").alias("goldLayerData")
-    val silverLayerData = readData(silverLayerPath)
-      .select("symbol","date","hour","volume","time").alias("silverLayerData")
+    val silverLayerData = readLatestSilverLayerData(silverLayerPath)
+      .select("symbol","date","volume","time").alias("silverLayerData")
 
     val incrementalSilverDataForExistingSymbols = goldLayerData.join(silverLayerData,
       ( col("goldLayerData.symbol")===col("silverLayerData.symbol")
@@ -95,6 +96,21 @@ class GoldLayerBuilder (configurationHelper:ConfigurationHelper,spark:SparkSessi
       .mode(Append).save(goldLayerPath)
   }
 
+  def readLatestSilverLayerData(path:String) = {
+    val deltaTable = DeltaTable.forPath(path)
+    val latestVersion: Long = deltaTable.history().select("version")
+      .collect().toSeq
+      .map(row => row.getLong(0))
+      .maxBy(_.longValue())
+
+    spark.read
+      .format(DELTA).option("versionAsOf",latestVersion).load(path)
+  }
+
+  def readAllSilverLayerData(path:String) = {
+    spark.read
+      .format(DELTA).load(path)
+  }
 
   def readData(path:String) = {
     spark.read

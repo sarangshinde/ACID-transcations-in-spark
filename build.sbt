@@ -23,7 +23,7 @@ lazy val app = project
       "org.apache.spark" %% "spark-sql" % "2.4.4",
       "org.apache.spark" %% "spark-avro" % "2.4.4",
       "com.typesafe" % "config" % "1.3.2",
-      "org.apache.hudi" %% "hudi-spark-bundle" % "0.5.2-incubating",
+      "org.apache.hudi" %% "hudi-spark-bundle" % "0.5.3",
       "io.delta" %% "delta-core" % "0.6.1",
       "org.apache.iceberg" % "iceberg-spark-runtime" % "0.8.0-incubating",
       "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.9.0" % IntegrationTest

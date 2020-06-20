@@ -8,6 +8,7 @@ import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.functions.{col, lead, lit, max, when}
 import utilities.{ConfigurationFactory, ConfigurationHelper, SparkFactory}
 import utilities.Constants._
+import utilities.ColumnConstants._
 
 
 class SilverLayerBuilder(configurationHelper:ConfigurationHelper,spark:SparkSession){
@@ -15,35 +16,35 @@ class SilverLayerBuilder(configurationHelper:ConfigurationHelper,spark:SparkSess
 
   import spark.implicits._
   def calculateVolumnRiseOrDrop(data:DataFrame) = {
-    val windowBySymbolOrderByTime= Window.partitionBy("symbol").orderBy($"time")
-    val volumeOverPeriod = data.withColumn("next_volume", lead("volume", 1) over (windowBySymbolOrderByTime))
-      .withColumn("next_volume",when(col("next_volume").isNull,col("volume")).otherwise(col("next_volume")))
-    val volumeDifference = volumeOverPeriod.withColumn("volume_difference",
-      col("volume") - col("next_volume"))
-    volumeDifference.withColumn("volume_rise_or_drop",
-      when(col("volume_difference") > 0,"rise").
-        when(col("volume_difference") === 0,"no_change")
+    val windowBySymbolOrderByTime= Window.partitionBy(ITEM).orderBy(col(INVENTORY_TIME))
+    val volumeOverPeriod = data.withColumn(NEXT_QUANTITY, lead(QUANTITY, 1) over (windowBySymbolOrderByTime))
+      .withColumn(NEXT_QUANTITY,when(col(NEXT_QUANTITY).isNull,col(QUANTITY)).otherwise(col(NEXT_QUANTITY)))
+    val volumeDifference = volumeOverPeriod.withColumn(QUANTITY_DIFFERENCE,
+      col(QUANTITY) - col(NEXT_QUANTITY))
+    volumeDifference.withColumn(QUANTITY_RISE_OR_DROP,
+      when(col(QUANTITY_DIFFERENCE) > 0,"rise").
+        when(col(QUANTITY_DIFFERENCE) === 0,"no_change")
         .otherwise("drop"))
   }
 
 
   def performCalculations(existingData:DataFrame, newData :DataFrame) ={
     if(existingData.isEmpty) {
-       calculateVolumnRiseOrDrop(newData.filter($"symbol"===lit("BAND")))
+       calculateVolumnRiseOrDrop(newData.filter(col(ITEM)===lit(MILK)))
     }
      else {
-      val symbolWithMaxTime = existingData.groupBy($"symbol".alias("existingSymbol"))
-        .agg(max("time").alias("maxTime"))
+      val symbolWithMaxTime = existingData.groupBy(col(ITEM).alias("existingSymbol"))
+        .agg(max(INVENTORY_TIME).alias("maxTime"))
       val incrementalRawDataForExistingSymbols = symbolWithMaxTime.join(newData,
-        ( col("symbol")===col("existingSymbol")
+        ( col(ITEM)===col("existingSymbol")
           &&
-          col("time")>col("maxTime")
+          col(INVENTORY_TIME)>col("maxTime")
           )
       ).drop("maxTime","existingSymbol")
       val incrementalRawDataForNewSymbols = newData.join(symbolWithMaxTime.drop("maxTime"),
-        col("existingSymbol") === col("symbol"),"left_anti").drop("existingSymbol")
+        col("existingSymbol") === col(ITEM),"left_anti").drop("existingSymbol")
 
-      val exitingDataWithoutVolumnRaiseColumns = existingData.drop("next_volume","volume_difference","volume_rise_or_drop")
+      val exitingDataWithoutVolumnRaiseColumns = existingData.drop(NEXT_QUANTITY,QUANTITY_DIFFERENCE,QUANTITY_RISE_OR_DROP)
       val unionData = exitingDataWithoutVolumnRaiseColumns
                                             .union(incrementalRawDataForExistingSymbols)
                                             .union(incrementalRawDataForNewSymbols)
@@ -53,9 +54,9 @@ class SilverLayerBuilder(configurationHelper:ConfigurationHelper,spark:SparkSess
 
   def mergeDataWithSilverLayer(dataToWrite: DataFrame, silverLayerPath: String): Unit ={
 
-    val updateMatchCondition = "existingData.symbol = newDataToWrite.symbol" +
-      " AND existingData.time = newDataToWrite.time " +
-      "AND existingData.next_volume != newDataToWrite.next_volume"
+    val updateMatchCondition = s"existingData.${ITEM} = newDataToWrite.${ITEM} " +
+      s"AND existingData.${INVENTORY_TIME} = newDataToWrite.${INVENTORY_TIME} " +
+      s"AND existingData.${NEXT_QUANTITY} != newDataToWrite.${NEXT_QUANTITY}"
 
     DeltaTable.forPath(spark, silverLayerPath)
       .as("existingData")
@@ -64,13 +65,13 @@ class SilverLayerBuilder(configurationHelper:ConfigurationHelper,spark:SparkSess
         )
       .whenMatched
       .updateExpr(
-        Map("next_volume" -> "newDataToWrite.next_volume",
-          "volume_difference" -> "newDataToWrite.volume_difference",
-    "volume_rise_or_drop" -> "newDataToWrite.volume_rise_or_drop"))
+        Map(NEXT_QUANTITY -> s"newDataToWrite.${NEXT_QUANTITY}",
+          QUANTITY_DIFFERENCE -> s"newDataToWrite.${QUANTITY_DIFFERENCE}",
+          QUANTITY_RISE_OR_DROP -> s"newDataToWrite.${QUANTITY_RISE_OR_DROP}"))
       .execute()
 
 
-    val insertMatchCondition = "existingData.symbol == newDataToWrite.symbol AND existingData.time == newDataToWrite.time"
+    val insertMatchCondition = s"existingData.${ITEM} == newDataToWrite.${ITEM} AND existingData.${INVENTORY_TIME} == newDataToWrite.${INVENTORY_TIME}"
     DeltaTable.forPath(spark, silverLayerPath)
       .as("existingData")
       .merge(
@@ -88,10 +89,9 @@ class SilverLayerBuilder(configurationHelper:ConfigurationHelper,spark:SparkSess
 
     val rawData = spark.read
                        .format(DELTA).load(rawDataPath)
-
-    val dataWithVolumnRiseAndDrop = calculateVolumnRiseOrDrop(rawData.filter($"symbol"===lit("BAND")))
+    val dataWithVolumnRiseAndDrop = calculateVolumnRiseOrDrop(rawData.filter(col(ITEM)===lit(MILK)).filter(col(HOUR)===9))
     dataWithVolumnRiseAndDrop.write.format(DELTA)
-      .partitionBy("date","hour")
+      .partitionBy(DATE,HOUR)
       .mode(OVERWRITE).save(silverLayerPath)
   }
 
@@ -100,7 +100,6 @@ class SilverLayerBuilder(configurationHelper:ConfigurationHelper,spark:SparkSess
 
     val silverLayerExistingData = spark.read.format(DELTA).load(silverLayerPath)
     val rawData = spark.read.format(DELTA).load(rawDataPath)
-      .filter($"symbol"===lit("BAND") or $"symbol"===lit("GOOG"))
     val dataToWrite =performCalculations(silverLayerExistingData,rawData)
     mergeDataWithSilverLayer(dataToWrite,silverLayerPath)
 
@@ -130,7 +129,7 @@ object SilverLayerBuilder {
       }
     val silverLayerData = spark.read.format(DELTA).load(silverLayerPath)
     println("Existing Number of records " + silverLayerData.count)
-    silverLayerData.orderBy("symbol","time").show(200,false)
+    silverLayerData.orderBy(ITEM,INVENTORY_TIME).show(200,false)
 
   }
 

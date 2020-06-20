@@ -1,11 +1,13 @@
 package datapipeline.consumer
 import deltalake.basics.streaming.StreamReaderWriter.writeStreamData
-import org.apache.spark.sql.functions.from_json
+import org.apache.spark.sql.functions.{col, from_json}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.streaming.Trigger
 import org.apache.spark.sql.types.{DoubleType, LongType, StringType, StructField, StructType}
 import utilities.{ConfigurationFactory, ConfigurationHelper, SparkFactory}
 import utilities.Constants._
+import utilities.ColumnConstants._
+
 class KafkaConsumer(configurationHelper:ConfigurationHelper,spark:SparkSession){
 
 
@@ -23,15 +25,19 @@ class KafkaConsumer(configurationHelper:ConfigurationHelper,spark:SparkSession){
     import spark.implicits._
 
     val schema = StructType(Seq(StructField("close",DoubleType,true),
-      StructField("date",StringType,true), StructField("day",StringType,true),
+      StructField(DATE,StringType,true), StructField("day",StringType,true),
       StructField("high",DoubleType,true), StructField("key",StringType,true),
       StructField("low",DoubleType,true), StructField("month",StringType,true),
-      StructField("open",DoubleType,true), StructField("symbol",StringType,true),
-      StructField("ts",StringType,true), StructField("volume",LongType,true),
+      StructField("open",DoubleType,true), StructField(ITEM,StringType,true),
+      StructField("ts",StringType,true), StructField(QUANTITY,LongType,true),
       StructField("year",LongType,true)))
 
     val convertedJsonData = rawData.toDF().select(from_json($"value".cast("string"),schema).alias("stock_data"))
-    convertedJsonData.selectExpr("regexp_replace(stock_data.date,'/','') as date","hour(cast(stock_data.ts as timestamp)) as hour","cast(stock_data.ts as timestamp) as time","stock_data.volume","stock_data.open","stock_data.close","stock_data.symbol")
+    convertedJsonData.selectExpr(s"regexp_replace(stock_data.${DATE},'/','') as ${DATE}",
+      s"hour(cast(stock_data.ts as timestamp)) as ${HOUR}",
+      s"cast(stock_data.ts as timestamp) as ${INVENTORY_TIME}",
+      s"stock_data.${QUANTITY}", s"stock_data.${ITEM}").drop("open","close")
+      .filter(col(ITEM).isin(MILK,BUTTER))
 
 
 
@@ -51,7 +57,7 @@ class KafkaConsumer(configurationHelper:ConfigurationHelper,spark:SparkSession){
 
     data.writeStream.format(DELTA)
       .outputMode(APPEND)
-      .partitionBy("date","hour")
+      .partitionBy(DATE,HOUR)
       .option("checkpointLocation",rawCheckPointPath)
       .trigger(Trigger.ProcessingTime("5 seconds"))
       .start(rawDataPath)

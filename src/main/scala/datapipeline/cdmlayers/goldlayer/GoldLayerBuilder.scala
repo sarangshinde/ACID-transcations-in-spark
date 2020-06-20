@@ -14,6 +14,7 @@ import org.apache.spark.sql.types.StringType
 import utilities.Constants.{DELTA, OVERWRITE}
 import utilities.{ConfigurationFactory, ConfigurationHelper, SparkFactory}
 import utilities.Constants._
+import utilities.ColumnConstants._
 
 class GoldLayerBuilder (configurationHelper:ConfigurationHelper,spark:SparkSession){
 
@@ -23,10 +24,10 @@ class GoldLayerBuilder (configurationHelper:ConfigurationHelper,spark:SparkSessi
     df.write.format(HUDI).
       options(getQuickstartWriteConfigs).
       option(PRECOMBINE_FIELD_OPT_KEY, "last_updated_at").
-      option(RECORDKEY_FIELD_OPT_KEY, "symbol").
-      option(PARTITIONPATH_FIELD_OPT_KEY, "date").
+      option(RECORDKEY_FIELD_OPT_KEY, ITEM).
+      option(PARTITIONPATH_FIELD_OPT_KEY, DATE).
       option(HIVE_TABLE_OPT_KEY, HUDI_TABLENAME).
-      option(HIVE_PARTITION_FIELDS_OPT_KEY, "date").
+      option(HIVE_PARTITION_FIELDS_OPT_KEY, DATE).
       option(HIVE_PARTITION_FIELDS_OPT_KEY, classOf[MultiPartKeysValueExtractor].getName).
       option(TABLE_NAME, HUDI_TABLENAME).
       option(OPERATION_OPT_KEY, UPSERT_OPERATION_OPT_VAL)
@@ -35,35 +36,35 @@ class GoldLayerBuilder (configurationHelper:ConfigurationHelper,spark:SparkSessi
   def performAggregationsUsingPartitonFor(incrementalSilverDataForExistingSymbols:DataFrame):DataFrame={
 
     val windowPartionByAppIdWithEventDescOrder: WindowSpec =
-      Window.partitionBy("silverLayerData.symbol","silverLayerData.date")
-        .orderBy(col("time").desc)
+      Window.partitionBy(s"silverLayerData.${ITEM}",s"silverLayerData.${DATE}")
+        .orderBy(col(INVENTORY_TIME).desc)
 
-    val aggregatedData = incrementalSilverDataForExistingSymbols.withColumn("agg_volume",
-      sum("volume") over windowPartionByAppIdWithEventDescOrder )
+    val aggregatedData = incrementalSilverDataForExistingSymbols.withColumn(AGG_QUANTITY,
+      sum(QUANTITY) over windowPartionByAppIdWithEventDescOrder )
       .withColumn("max_time",
-        max("time") over windowPartionByAppIdWithEventDescOrder )
+        max(INVENTORY_TIME) over windowPartionByAppIdWithEventDescOrder )
       .withColumn("row_number",row_number over  windowPartionByAppIdWithEventDescOrder)
       .filter($"row_number"===1)
 
     val updateExistingAggregations= aggregatedData
-      .withColumn("total_volume",
-        col("goldLayerData.total_volume") + col("agg_volume"))
+      .withColumn(TOTAL_QUANTITY,
+        col(s"goldLayerData.${TOTAL_QUANTITY}") + col(AGG_QUANTITY))
       .withColumn("last_updated_at",col("max_time"))
-    updateExistingAggregations.select("silverLayerData.symbol","silverLayerData.date","total_volume","last_updated_at")
+    updateExistingAggregations.select(s"silverLayerData.${ITEM}",s"silverLayerData.${DATE}",TOTAL_QUANTITY,"last_updated_at")
 
   }
 
   def performAggregations(data:DataFrame):DataFrame={
 
-    data.groupBy("symbol","date")
-      .agg(sum("volume").alias("total_volume"),
-           max("time").as("last_updated_at"))
-      .withColumn("date",$"date".cast(StringType))
+    data.groupBy(ITEM,DATE)
+      .agg(sum(QUANTITY).alias(TOTAL_QUANTITY),
+           max(INVENTORY_TIME).as("last_updated_at"))
+      .withColumn(DATE,col(DATE).cast(StringType))
   }
 
   def dumpExistingData(silverLayerPath:String,goldLayerPath:String): Unit ={
 
-    val silverLayerData = readAllSilverLayerData(silverLayerPath).filter($"symbol"===lit("BAND"))
+    val silverLayerData = readAllSilverLayerData(silverLayerPath).filter(col(ITEM)===lit(MILK))
     val aggregatedData = performAggregations(silverLayerData)
     hudiWriterConfig(aggregatedData)
       .mode(Append).save(goldLayerPath)
@@ -74,20 +75,20 @@ class GoldLayerBuilder (configurationHelper:ConfigurationHelper,spark:SparkSessi
 
     val goldLayerData = readData(goldLayerPath+"/*/*").alias("goldLayerData")
     val silverLayerData = readLatestSilverLayerData(silverLayerPath)
-      .select("symbol","date","volume","time").alias("silverLayerData")
+      .select(ITEM,DATE,QUANTITY,INVENTORY_TIME).alias("silverLayerData")
 
     val incrementalSilverDataForExistingSymbols = goldLayerData.join(silverLayerData,
-      ( col("goldLayerData.symbol")===col("silverLayerData.symbol")
+      ( col(s"goldLayerData.${ITEM}")===col(s"silverLayerData.${ITEM}")
         &&
-        col("time")>col("last_updated_at")
+        col(INVENTORY_TIME)>col("last_updated_at")
         )
-    ).select("goldLayerData.last_updated_at","goldLayerData.total_volume","silverLayerData.*")
+    ).select("goldLayerData.last_updated_at",s"goldLayerData.${TOTAL_QUANTITY}","silverLayerData.*")
 
     val incrementalAggregatedDataExistingSymbol = performAggregationsUsingPartitonFor(incrementalSilverDataForExistingSymbols)
 
-    val incrementalDataForNewSymbols = silverLayerData.join(goldLayerData.select("goldLayerData.symbol"),
-      col("goldLayerData.symbol") === col("silverLayerData.symbol"),"left_anti")
-      .drop("goldLayerData.symbol")
+    val incrementalDataForNewSymbols = silverLayerData.join(goldLayerData.select(s"goldLayerData.${ITEM}"),
+      col(s"goldLayerData.${ITEM}") === col(s"silverLayerData.${ITEM}"),"left_anti")
+      .drop(s"goldLayerData.${ITEM}")
 
    val incrementalAggregatedDataNewSymbols  =  performAggregations(incrementalDataForNewSymbols)
    val  dataToUpdate =incrementalAggregatedDataExistingSymbol.union(incrementalAggregatedDataNewSymbols)
@@ -139,8 +140,8 @@ object GoldLayerBuilder {
       goldLayerBuilder.dumpExistingData(silverLayerPath, goldLayerPath)
     }
     val goldLayerData =goldLayerBuilder.readData(goldLayerPath+"/*/*")
+        .select(ITEM,DATE,TOTAL_QUANTITY,"last_updated_at")
     println("Total number of records before incremental update "+ goldLayerData.count())
-    goldLayerData.printSchema()
     goldLayerData.show(false)
   }
 }

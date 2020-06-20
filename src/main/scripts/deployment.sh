@@ -40,16 +40,16 @@ spark-submit --master local  --name silverlayer --files conf/application.local.c
 
 spark-submit --master local  --name goldlayer --files conf/application.local.conf,conf/application.container.conf --jars ${commaSepratedLibs} --class datapipeline.cdmlayers.goldlayer.GoldLayerBuilder lib/transcationswithspark.transcationswithspark-0.1.0-SNAPSHOT.jar conf/application.container.conf incremental
 
-##Reset state
+##Reset state as we have added mount path it stores all data
 
 #Go to kafkabroker container and delete topic data
- kafka-topics.sh --zookeeper zookeeper:2181 --delete --topic stock_ticks
+kafka-topics.sh --zookeeper zookeeper:2181 --delete --topic stock_ticks
 
 #Go to adhoc-2 container and delete all hdfs data
-hadoop fs -rmr /user/raw_delta_checkpoint
-hadoop fs -rmr  /user/hive/warehouse/raw_data_delta
-hadoop fs -rmr  /user/hive/warehouse/silver_data_delta
-hadoop fs -rmr /user/hive/warehouse/gold_data_hudi
+hadoop fs -rm -r /user/raw_delta_checkpoint
+hadoop fs -rm -r  /user/hive/warehouse/raw_data_delta
+hadoop fs -rm -r  /user/hive/warehouse/silver_data_delta
+hadoop fs -rm -r /user/hive/warehouse/gold_data_hudi
 
 # Drop gold table from hive
 

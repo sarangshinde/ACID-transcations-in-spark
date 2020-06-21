@@ -1,8 +1,7 @@
 package deltalake.basics.batch
 
-import java.sql.Timestamp
-
 import io.delta.tables.DeltaTable
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.expr
 import utilities.Constants.{APPEND, DELTA, DELTA_BASEPATH, OVERWRITE}
@@ -12,7 +11,8 @@ object DMLOperations extends App{
 
   val spark = SparkFactory.getSparkSession()
   import spark.implicits._
-
+  Logger.getLogger("org").setLevel(Level.OFF)
+  Logger.getLogger("akka").setLevel(Level.OFF)
 
   def writeToDeltaLake(data:DataFrame, mode:String): Unit = {
     data.write
@@ -21,35 +21,26 @@ object DMLOperations extends App{
       .save(DELTA_BASEPATH)
   }
   def insert(): Unit ={
-    val data = Seq((4, "new_pen",Timestamp.valueOf("2019-11-12 01:02:03.123456789")))
-      .toDF("itemId", "itemName","itemPruchasedAtTime")
+    val data = Seq((4, "Ink Pen",1))
+      .toDF("ItemId", "ItemName","NumberSold")
      writeToDeltaLake(data,APPEND)
   }
-
-
-  def updateWithOverwrite(): Unit = {
-    val data = Seq((4, "new_pen_update",Timestamp.valueOf("2019-11-12 01:02:03.123456789")))
-      .toDF("itemId", "itemName","itemPruchasedAtTime")
-    writeToDeltaLake(data,OVERWRITE)
-
-  }
-
-
 
   def query(query:String): Unit ={
     spark.sql(query).show(false)
   }
 
-
   val tableData = spark.read.format(DELTA).load(DELTA_BASEPATH)
-  tableData.createOrReplaceTempView("delta_lake_emp_table")
+  tableData.createOrReplaceTempView("inventory_temp_table")
 
   println("Existing Data")
-  query("select * from delta_lake_emp_table")
+  query("select * from inventory_temp_table order by ItemId")
+
+  /* A new item as been added to product catalog and we get sales transaction for that product*/
   insert()
 
-  println("Data after new insert")
-  query("select * from delta_lake_emp_table")
+  println("Data after new insert for Ink Pen")
+  query("select * from inventory_temp_table order by ItemId")
 
 
 
@@ -59,15 +50,56 @@ object DMLOperations extends App{
 
   //Conditional update without overwrite
   val deltaTable = DeltaTable.forPath(spark, DELTA_BASEPATH)
+
+
+  /* You received the return request for a product and you would like to update the KPI */
   deltaTable.update(
-    condition = expr("itemName == 'new_pen'"),
-    set = Map("itemId" -> expr("itemId + 1")))
+    condition = expr("itemName == 'Pen'"),
+    set = Map("NumberSold" -> expr("NumberSold - 1")))
 
-  println("Data after updateing conditionally ")
-  query("select * from delta_lake_emp_table")
+  val updates = Seq((1, "Pen",7),
+    (2, "Pencil",20),
+    (5, "SketchPens",6))
+    .toDF("ItemId", "ItemName","NumberSold")
 
-  // Delete conditionally
+  deltaTable.alias("originalTable")
+    .merge(
+      updates.as("updates"),
+      "originalTable.ItemId = updates.ItemId")
+    .whenMatched
+    .updateExpr(
+      Map("originalTable.ItemName" -> "updates.ItemName",
+          "originalTable.NumberSold"-> "updates.NumberSold"))
+    .whenNotMatched
+    .insertExpr(
+      Map(
+        "originalTable.ItemId" -> "updates.ItemId",
+        "originalTable.ItemName" -> "updates.ItemName",
+        "originalTable.NumberSold" -> "updates.NumberSold"))
+    .execute()
+
+  println("Data after upserts ")
+  query("select * from inventory_temp_table order by ItemId")
+
+  println("Data after updating conditionally ")
+  query("select * from inventory_temp_table order by ItemId")
+
+
   println("Data after delete conditionally ")
-  deltaTable.delete(condition = expr("itemName == 'new_pen'"))
-  query("select * from delta_lake_emp_table")
+
+  deltaTable.delete(condition = expr("itemName == 'Ink Pen'"))
+  query("select * from inventory_temp_table order by ItemId")
+
+  def updateWithOverwrite(): Unit = {
+    val data = Seq((1, "Pen",15),
+      (2, "Pencil",20),
+      (3, "Notebook",6))
+      .toDF("ItemId", "ItemName","NumberSold")
+    writeToDeltaLake(data,OVERWRITE)
+  }
+  updateWithOverwrite()
+
+  println("Data after insert same value in same partition using overwrite")
+  query("select * from inventory_temp_table order by ItemId" )
+
 }

@@ -1,25 +1,28 @@
 package deltalake.basics.batch
 
-import java.sql.Timestamp
-import java.util.{Calendar, Date}
 
-import io.delta.tables.DeltaTable
-import org.joda.time.DateTime
+import org.apache.log4j.{Level, Logger}
 import utilities.Constants.{DELTA, DELTA_BASEPATH}
 import utilities.SparkFactory
+import java.nio.file.Paths
 
-object CreateTable extends App{
 
-   def addData(path:String): Unit =
-  {
+object CreateTable extends App {
+
+
+  def addData(path: String): Unit = {
+
     val spark = SparkFactory.getSparkSession()
-    import spark.implicits._
-    val data = Seq((1, "pen",new Timestamp(System.currentTimeMillis())),
-      (2, "pencil",new Timestamp(System.currentTimeMillis())),
-      (3, "notebook",new Timestamp(System.currentTimeMillis())))
-      .toDF("itemId", "itemName","itemPruchasedAtTime")
 
-    data.write.format(DELTA).mode("overwrite").save(path)
+    import spark.implicits._
+    Logger.getLogger("org").setLevel(Level.OFF)
+    val data = Seq((1, "Pen", 5),
+      (2, "Pencil", 10),
+      (3, "Notebook", 4))
+      .toDF("ItemId", "ItemName", "NumberSold")
+    println(Paths.get(".").toAbsolutePath)
+    data.write.format(DELTA).mode("overwrite").save(DELTA_BASEPATH)
+
 
   }
 

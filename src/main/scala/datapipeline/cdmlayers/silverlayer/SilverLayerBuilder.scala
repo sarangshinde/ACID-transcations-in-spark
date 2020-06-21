@@ -27,7 +27,7 @@ class SilverLayerBuilder(configurationHelper:ConfigurationHelper,spark:SparkSess
         .otherwise("drop"))
   }
 
-
+  //Calculate
   def performCalculations(existingData:DataFrame, newData :DataFrame) ={
     if(existingData.isEmpty) {
        calculateVolumnRiseOrDrop(newData.filter(col(ITEM)===lit(MILK)))
@@ -44,7 +44,8 @@ class SilverLayerBuilder(configurationHelper:ConfigurationHelper,spark:SparkSess
       val incrementalRawDataForNewSymbols = newData.join(symbolWithMaxTime.drop("maxTime"),
         col("existingSymbol") === col(ITEM),"left_anti").drop("existingSymbol")
 
-      val exitingDataWithoutVolumnRaiseColumns = existingData.drop(NEXT_QUANTITY,QUANTITY_DIFFERENCE,QUANTITY_RISE_OR_DROP)
+      val exitingDataWithoutVolumnRaiseColumns = existingData.drop(NEXT_QUANTITY,QUANTITY_DIFFERENCE,
+        QUANTITY_RISE_OR_DROP)
       val unionData = exitingDataWithoutVolumnRaiseColumns
                                             .union(incrementalRawDataForExistingSymbols)
                                             .union(incrementalRawDataForNewSymbols)
@@ -58,6 +59,7 @@ class SilverLayerBuilder(configurationHelper:ConfigurationHelper,spark:SparkSess
       s"AND existingData.${INVENTORY_TIME} = newDataToWrite.${INVENTORY_TIME} " +
       s"AND existingData.${NEXT_QUANTITY} != newDataToWrite.${NEXT_QUANTITY}"
 
+    //Use delta merge operation to update data when condition is matched
     DeltaTable.forPath(spark, silverLayerPath)
       .as("existingData")
       .merge(
@@ -71,7 +73,9 @@ class SilverLayerBuilder(configurationHelper:ConfigurationHelper,spark:SparkSess
       .execute()
 
 
-    val insertMatchCondition = s"existingData.${ITEM} == newDataToWrite.${ITEM} AND existingData.${INVENTORY_TIME} == newDataToWrite.${INVENTORY_TIME}"
+    //Use delta merge operation to insert new data when condition is matched
+    val insertMatchCondition = s"existingData.${ITEM} == newDataToWrite.${ITEM} " +
+      s"AND existingData.${INVENTORY_TIME} == newDataToWrite.${INVENTORY_TIME}"
     DeltaTable.forPath(spark, silverLayerPath)
       .as("existingData")
       .merge(
@@ -89,7 +93,8 @@ class SilverLayerBuilder(configurationHelper:ConfigurationHelper,spark:SparkSess
 
     val rawData = spark.read
                        .format(DELTA).load(rawDataPath)
-    val dataWithVolumnRiseAndDrop = calculateVolumnRiseOrDrop(rawData.filter(col(ITEM)===lit(MILK)).filter(col(HOUR)===9))
+    val dataWithVolumnRiseAndDrop = calculateVolumnRiseOrDrop(rawData.filter(col(ITEM)===lit(MILK))
+                                                                      .filter(col(HOUR)===9))
     dataWithVolumnRiseAndDrop.write.format(DELTA)
       .partitionBy(DATE,HOUR)
       .mode(OVERWRITE).save(silverLayerPath)

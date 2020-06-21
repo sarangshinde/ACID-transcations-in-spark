@@ -20,6 +20,7 @@ object Constants {
 
   val SMALL_PARQUET_FILE_SPATH="file:///Users/in-svsarang/Desktop/sarang/sparkwork/src/main/resources/parquet_small_files"
   val COMPACTED_MOR_HUDI_FILES_PATH="file:///Users/in-svsarang/Desktop/sarang/sparkwork/src/main/resources/compacted_hudi_mor_files"
+  val COMPACTED_MOR_INLINE_COMPACT_HUDI_FILES_PATH="file:///Users/in-svsarang/Desktop/sarang/sparkwork/src/main/resources/compacted_hudi_mor_inline_compact_files"
   val COMPACTED_COW_HUDI_FILES_PATH="file:///Users/in-svsarang/Desktop/sarang/sparkwork/src/main/resources/compacted_hudi_cow_files"
   val COMPACTED_DELTA_FILES_PATH="file:///Users/in-svsarang/Desktop/sarang/sparkwork/src/main/resources/compacted_delta_files"
   val DELTA = "delta"

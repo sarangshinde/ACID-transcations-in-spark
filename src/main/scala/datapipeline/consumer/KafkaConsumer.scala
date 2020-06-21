@@ -32,7 +32,8 @@ class KafkaConsumer(configurationHelper:ConfigurationHelper,spark:SparkSession){
       StructField("ts",StringType,true), StructField(QUANTITY,LongType,true),
       StructField("year",LongType,true)))
 
-    val convertedJsonData = rawData.toDF().select(from_json($"value".cast("string"),schema).alias("stock_data"))
+    val convertedJsonData = rawData.toDF()
+      .select(from_json($"value".cast("string"),schema).alias("stock_data"))
     convertedJsonData.selectExpr(s"regexp_replace(stock_data.${DATE},'/','') as ${DATE}",
       s"hour(cast(stock_data.ts as timestamp)) as ${HOUR}",
       s"cast(stock_data.ts as timestamp) as ${INVENTORY_TIME}",
@@ -44,7 +45,8 @@ class KafkaConsumer(configurationHelper:ConfigurationHelper,spark:SparkSession){
   }
   //for debuging
   def writeToConsole(data:DataFrame) = {
-      data.writeStream.format("console").option("truncate","False").trigger(Trigger.ProcessingTime("5 seconds"))
+      data.writeStream.format("console").option("truncate","False")
+        .trigger(Trigger.ProcessingTime("5 seconds"))
       .start()
   }
 

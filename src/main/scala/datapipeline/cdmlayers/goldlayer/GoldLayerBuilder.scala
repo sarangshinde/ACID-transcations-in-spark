@@ -20,6 +20,7 @@ class GoldLayerBuilder (configurationHelper:ConfigurationHelper,spark:SparkSessi
 
   import spark.implicits._
 
+  // Hudi writer config for upsert
   def hudiWriterConfig(df:DataFrame) = {
     df.write.format(HUDI).
       options(getQuickstartWriteConfigs).
@@ -46,11 +47,13 @@ class GoldLayerBuilder (configurationHelper:ConfigurationHelper,spark:SparkSessi
       .withColumn("row_number",row_number over  windowPartionByAppIdWithEventDescOrder)
       .filter($"row_number"===1)
 
+
     val updateExistingAggregations= aggregatedData
       .withColumn(TOTAL_QUANTITY,
         col(s"goldLayerData.${TOTAL_QUANTITY}") + col(AGG_QUANTITY))
       .withColumn("last_updated_at",col("max_time"))
-    updateExistingAggregations.select(s"silverLayerData.${ITEM}",s"silverLayerData.${DATE}",TOTAL_QUANTITY,"last_updated_at")
+    updateExistingAggregations.select(s"silverLayerData.${ITEM}",s"silverLayerData.${DATE}",
+                                      TOTAL_QUANTITY,"last_updated_at")
 
   }
 
@@ -77,6 +80,7 @@ class GoldLayerBuilder (configurationHelper:ConfigurationHelper,spark:SparkSessi
     val silverLayerData = readLatestSilverLayerData(silverLayerPath)
       .select(ITEM,DATE,QUANTITY,INVENTORY_TIME).alias("silverLayerData")
 
+
     val incrementalSilverDataForExistingSymbols = goldLayerData.join(silverLayerData,
       ( col(s"goldLayerData.${ITEM}")===col(s"silverLayerData.${ITEM}")
         &&
@@ -84,20 +88,26 @@ class GoldLayerBuilder (configurationHelper:ConfigurationHelper,spark:SparkSessi
         )
     ).select("goldLayerData.last_updated_at",s"goldLayerData.${TOTAL_QUANTITY}","silverLayerData.*")
 
-    val incrementalAggregatedDataExistingSymbol = performAggregationsUsingPartitonFor(incrementalSilverDataForExistingSymbols)
+    val incrementalAggregatedDataExistingSymbol =
+      performAggregationsUsingPartitonFor(incrementalSilverDataForExistingSymbols)
 
     val incrementalDataForNewSymbols = silverLayerData.join(goldLayerData.select(s"goldLayerData.${ITEM}"),
       col(s"goldLayerData.${ITEM}") === col(s"silverLayerData.${ITEM}"),"left_anti")
       .drop(s"goldLayerData.${ITEM}")
 
+    //Prepare Dataframe to used for upsert
    val incrementalAggregatedDataNewSymbols  =  performAggregations(incrementalDataForNewSymbols)
-   val  dataToUpdate =incrementalAggregatedDataExistingSymbol.union(incrementalAggregatedDataNewSymbols)
+   val  dataToUpdate =incrementalAggregatedDataExistingSymbol
+                          .union(incrementalAggregatedDataNewSymbols)
 
+   //Upsert is based on configurations i.e using row_key and time
     hudiWriterConfig(dataToUpdate)
       .mode(Append).save(goldLayerPath)
   }
 
+  //Incremental Pull based on version information
   def readLatestSilverLayerData(path:String) = {
+
     val deltaTable = DeltaTable.forPath(path)
     val latestVersion: Long = deltaTable.history().select("version")
       .collect().toSeq

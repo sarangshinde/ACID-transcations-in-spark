@@ -46,7 +46,7 @@ object DMLOperations extends App{
 
   updateWithOverwrite()
   println("Data after insert same value in same partition using overwrite")
-  query("select * from delta_lake_emp_table")
+  query("select * from inventory_temp_table order by ItemId")
 
   //Conditional update without overwrite
   val deltaTable = DeltaTable.forPath(spark, DELTA_BASEPATH)

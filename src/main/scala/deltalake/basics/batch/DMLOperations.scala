@@ -33,30 +33,32 @@ object DMLOperations extends App{
   val tableData = spark.read.format(DELTA).load(DELTA_BASEPATH)
   tableData.createOrReplaceTempView("inventory_temp_table")
 
-  println("Existing Data")
+  println("1. Existing Data")
   query("select * from inventory_temp_table order by ItemId")
 
   /* A new item as been added to product catalog and we get sales transaction for that product*/
+  println("2. Data after new insert for Ink Pen")
   insert()
-
-  println("Data after new insert for Ink Pen")
   query("select * from inventory_temp_table order by ItemId")
 
-
-
+  /* You want to correct entire data*/
+  println("3. Data after insert same value in same partition using overwrite")
   updateWithOverwrite()
-  println("Data after insert same value in same partition using overwrite")
   query("select * from inventory_temp_table order by ItemId")
-
-  //Conditional update without overwrite
-  val deltaTable = DeltaTable.forPath(spark, DELTA_BASEPATH)
 
 
   /* You received the return request for a product and you would like to update the KPI */
+  //Conditional update without overwrite
+  val deltaTable = DeltaTable.forPath(spark, DELTA_BASEPATH)
+  println("4. Data after conditional update")
   deltaTable.update(
     condition = expr("itemName == 'Pen'"),
     set = Map("NumberSold" -> expr("NumberSold - 1")))
+  query("select * from inventory_temp_table order by ItemId")
 
+
+  /* You received the delta information change */
+  println("4. Data after upserts on conditions")
   val updates = Seq((1, "Pen",7),
     (2, "Pencil",20),
     (5, "SketchPens",6))
@@ -77,17 +79,10 @@ object DMLOperations extends App{
         "originalTable.ItemName" -> "updates.ItemName",
         "originalTable.NumberSold" -> "updates.NumberSold"))
     .execute()
-
-  println("Data after upserts ")
   query("select * from inventory_temp_table order by ItemId")
 
-  println("Data after updating conditionally ")
-  query("select * from inventory_temp_table order by ItemId")
-
-
-  println("Data after delete conditionally ")
-
-  deltaTable.delete(condition = expr("itemName == 'Ink Pen'"))
+  println("5. Data after conditional delete")
+  deltaTable.delete(condition = expr("itemName == 'Pen'"))
   query("select * from inventory_temp_table order by ItemId")
 
   def updateWithOverwrite(): Unit = {
@@ -97,9 +92,5 @@ object DMLOperations extends App{
       .toDF("ItemId", "ItemName","NumberSold")
     writeToDeltaLake(data,OVERWRITE)
   }
-  updateWithOverwrite()
-
-  println("Data after insert same value in same partition using overwrite")
-  query("select * from inventory_temp_table order by ItemId" )
 
 }

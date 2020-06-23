@@ -8,25 +8,26 @@ object Constants {
 
   val HUDI_COW_TABLENAME = "hudi_trips_cow"
   val HUDI_MOR_TABLENAME = "hudi_trips_mor"
-  val HUDI_BASEPATH = "file:///Users/in-svsarang/Desktop/sarang/sparkwork/src/main/resources/"+HUDI_TABLENAME
+  val HUDI_BASEPATH = s"file:///${CURRENT_DIRECTORY}/hudi_data/"+HUDI_TABLENAME
 
   val ICEBERG_TABLENAME = "iceberg_table"
-  val ICEBERG_BASEPATH = "file:///Balvinder/AXIS/ACID-transcations-in-spark/data/"+ICEBERG_TABLENAME
+  val ICEBERG_BASEPATH = s"file:///${CURRENT_DIRECTORY}/iceberg_data/"+ICEBERG_TABLENAME
 
 
   val DELTA_TABLENAME = "delta_lake_inventory"
   val DELTA_HISTORY_VERSIONING_BASEPATH = "file:///${CURRENT_DIRECTORY}/src/main/resources/history_versioning_"+DELTA_TABLENAME
-  val DELTA_BASEPATH = s"file:///${CURRENT_DIRECTORY}/data/"+DELTA_TABLENAME
-  val DELTA_CHECKPOINT_PATH = "file:///${CURRENT_DIRECTORY}/data/checkpoint_"+DELTA_TABLENAME
-  val DELTA_STREAMING_INPUT_PATH = "file:///${CURRENT_DIRECTORY}/data/streaming_input_"+DELTA_TABLENAME
-  val DELTA_STREAMING_OUTPUT_PATH = "file:///${CURRENT_DIRECTORY}/data/streaming_output_"+DELTA_TABLENAME
+  val DELTA_BASEPATH = s"file:///${CURRENT_DIRECTORY}/delta_data/"+DELTA_TABLENAME
+  val DELTA_CHECKPOINT_PATH = s"file:///${CURRENT_DIRECTORY}/delta_data/checkpoint_"+DELTA_TABLENAME
+  val DELTA_STREAMING_INPUT_PATH = s"file:///${CURRENT_DIRECTORY}/delta_data/streaming_input_"+DELTA_TABLENAME
+  val DELTA_STREAMING_OUTPUT_PATH = s"file:///${CURRENT_DIRECTORY}/delta_data/streaming_output_"+DELTA_TABLENAME
 
-  val SMALL_PARQUET_FILE_SPATH="file:///Users/in-svsarang/Desktop/sarang/sparkwork/src/main/resources/parquet_small_files"
-  val COMPACTED_MOR_HUDI_FILES_PATH="file:///Users/in-svsarang/Desktop/sarang/sparkwork/src/main/resources/compacted_hudi_mor_files"
-  val COMPACTED_MOR_INLINE_COMPACT_HUDI_FILES_PATH="file:///Users/in-svsarang/Desktop/sarang/sparkwork/src/main/resources/compacted_hudi_mor_inline_compact_files"
-  val COMPACTED_COW_HUDI_FILES_PATH="file:///Users/in-svsarang/Desktop/sarang/sparkwork/src/main/resources/compacted_hudi_cow_files"
-  val COMPACTED_DELTA_FILES_PATH="file:///Users/in-svsarang/Desktop/sarang/sparkwork/src/main/resources/compacted_delta_files"
+  val SMALL_PARQUET_FILE_SPATH=s"file:///${CURRENT_DIRECTORY}/hudi_data/parquet_small_files"
+  val COMPACTED_MOR_HUDI_FILES_PATH=s"file:///${CURRENT_DIRECTORY}/hudi_data/compacted_hudi_mor_files"
+  val COMPACTED_MOR_INLINE_COMPACT_HUDI_FILES_PATH=s"file:///${CURRENT_DIRECTORY}/hudi_data/compacted_hudi_mor_inline_compact_files"
+  val COMPACTED_COW_HUDI_FILES_PATH=s"file:///${CURRENT_DIRECTORY}/hudi_data/compacted_hudi_cow_files"
+  val COMPACTED_DELTA_FILES_PATH=s"file:///${CURRENT_DIRECTORY}/hudi_data/compacted_delta_files"
   val DELTA = "delta"
+  val AVRO = "avro"
   val HUDI = "hudi"
   val APPEND = "append"
   val OVERWRITE = "overwrite"

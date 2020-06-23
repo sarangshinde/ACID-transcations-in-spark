@@ -5,6 +5,6 @@ out
 /.classpath
 /.project
 /.settings
-data
+*_data
 src/main/resources/*
 .DS_Store

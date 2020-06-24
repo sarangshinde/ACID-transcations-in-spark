@@ -22,10 +22,8 @@ object CreateTable extends App {
       (2, "Pencil", 10),
       (3, "Notebook", 4))
       .toDF("ItemId", "ItemName", "NumberSold")
-    println(Paths.get(".").toAbsolutePath)
+
     data.write.format(DELTA).mode("overwrite").save(DELTA_BASEPATH)
-
-
   }
 
   addData(DELTA_BASEPATH)

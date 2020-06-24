@@ -10,7 +10,7 @@ import utilities.SparkFactory
 object DDLOperations extends App {
 
   val spark = SparkFactory.getSparkSession()
-
+  //seperate out
   import spark.implicits._
 
   Logger.getLogger("org").setLevel(Level.OFF)
@@ -44,8 +44,8 @@ object DDLOperations extends App {
   }
 
   def insertWithDifferentSchemaMergeOption(): Unit = {
-    val data = Seq((5, "Ink Pen", "1"))
-      .toDF("ItemId", "ItemName", "NumberSold")
+    val data = Seq((4, "Ink Pen", 1))
+      .toDF("ItemId", "ItemName", "Sold")
     writeToDeltaLakeWithMergeSchema(data, APPEND)
   }
 

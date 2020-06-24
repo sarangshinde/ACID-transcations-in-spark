@@ -44,6 +44,7 @@ object DMLOperations extends App {
   val tableData = spark.read.format(DELTA).load(DELTA_BASEPATH)
   tableData.createOrReplaceTempView("inventory_temp_table")
 
+  println("*********************** Spark Operations ***********************")
   println("1. Existing Data")
   query("select * from inventory_temp_table order by ItemId")
 
@@ -59,7 +60,7 @@ object DMLOperations extends App {
   updateWithOverwrite()
   query("select * from inventory_temp_table order by ItemId")
 
-
+  println("*********************** Delta Operations ***********************")
   /* You received the return request for a product and you would like to update the KPI */
   //Conditional update without overwrite
   val deltaTable = DeltaTable.forPath(spark, DELTA_BASEPATH)

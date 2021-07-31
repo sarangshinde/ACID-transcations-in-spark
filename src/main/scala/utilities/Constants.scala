@@ -15,7 +15,7 @@ object Constants {
 
 
   val DELTA_TABLENAME = "delta_lake_inventory"
-  val DELTA_HISTORY_VERSIONING_BASEPATH = "file:///${CURRENT_DIRECTORY}/src/main/resources/history_versioning_"+DELTA_TABLENAME
+  val DELTA_HISTORY_VERSIONING_BASEPATH = s"file:///${CURRENT_DIRECTORY}/src/main/resources/history_versioning_"+DELTA_TABLENAME
   val DELTA_BASEPATH = s"file:///${CURRENT_DIRECTORY}/delta_data/"+DELTA_TABLENAME
   val DELTA_CHECKPOINT_PATH = s"file:///${CURRENT_DIRECTORY}/delta_data/checkpoint_"+DELTA_TABLENAME
   val DELTA_STREAMING_INPUT_PATH = s"file:///${CURRENT_DIRECTORY}/delta_data/streaming_input_"+DELTA_TABLENAME

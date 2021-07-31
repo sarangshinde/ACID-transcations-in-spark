@@ -4,7 +4,7 @@ package deltalake.basics.batch
 import org.apache.log4j.{Level, Logger}
 import utilities.Constants.{DELTA, DELTA_BASEPATH}
 import utilities.SparkFactory
-import java.nio.file.Paths
+
 
 
 object CreateTable extends App {
@@ -23,7 +23,7 @@ object CreateTable extends App {
       (3, "Notebook", 4))
       .toDF("ItemId", "ItemName", "NumberSold")
 
-    data.write.format(DELTA).mode("overwrite").save(DELTA_BASEPATH)
+    data.write.format(DELTA).mode("overwrite").save(path)
   }
 
   addData(DELTA_BASEPATH)

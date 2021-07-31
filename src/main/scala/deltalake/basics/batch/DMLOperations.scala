@@ -50,13 +50,13 @@ object DMLOperations extends App {
 
   /* A new item as been added to product catalog and we get sales transaction for that product*/
   println("2.A new item as been added to product catalog and we get sales transaction for that product")
-  println("2. Data after new insert for Ink Pen")
+  println("Data after new insert for Ink Pen")
   insert()
   query("select * from inventory_temp_table order by ItemId")
 
   /* You want to correct entire data since the source system was sending incorrect data*/
   println("3. You want to correct entire data since the source system was sending incorrect data")
-  println("3. Data after insert same value in same partition using overwrite")
+  println("Data after insert same value in same partition using overwrite")
   updateWithOverwrite()
   query("select * from inventory_temp_table order by ItemId")
 
@@ -65,7 +65,7 @@ object DMLOperations extends App {
   //Conditional update without overwrite
   val deltaTable = DeltaTable.forPath(spark, DELTA_BASEPATH)
   println("4. You received the return request for a product and you would like to update the KPI ")
-  println("4. Data after conditional update")
+  println("Data after conditional update")
   deltaTable.update(
     condition = expr("itemName == 'Pen'"),
     set = Map("NumberSold" -> expr("NumberSold - 1")))
@@ -74,10 +74,10 @@ object DMLOperations extends App {
 
   /* You received the delta information change */
   println("5. You received the delta information change")
-  println("5. Data after upserts on conditions")
+  println("Data after upserts on conditions")
   val updates = Seq((1, "Pen", 7),
     (2, "Pencil", 20),
-    (5, "SketchPens", 6))
+    (4, "SketchPens", 6))
     .toDF("ItemId", "ItemName", "NumberSold")
 
   deltaTable.alias("originalTable")
@@ -98,8 +98,8 @@ object DMLOperations extends App {
   query("select * from inventory_temp_table order by ItemId")
 
   /*You are no longer supporting a product*/
-  println("5. You are no longer supporting a product")
-  println("5. Data after conditional delete")
+  println("6. You are no longer supporting a product")
+  println("Data after conditional delete")
   deltaTable.delete(condition = expr("itemName == 'Pen'"))
   query("select * from inventory_temp_table order by ItemId")
 
